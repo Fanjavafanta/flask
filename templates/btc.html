@@ -10,23 +10,27 @@
 </head>
 <body>
     <h1 style="text-align:center">{{ title }}</h1>
-    <table>
-        <tr>
-            <th>Ouverture</th>
-            <th>Plus haut</th>
-            <th>Plus bas</th>
-            <th>Clôture</th>
-            <th>Volume</th>
-        </tr>
-        {% for row in data %}
-        <tr>
-            <td>{{ row.open }}</td>
-            <td>{{ row.high }}</td>
-            <td>{{ row.low }}</td>
-            <td>{{ row.close }}</td>
-            <td>{{ row.volume }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+    {% if data[0].error %}
+		<p style="color:red; text-align:center">{{ data[0].error }}</p>
+	{% else %}
+		<table>
+			<tr>
+				<th>Ouverture</th>
+				<th>Plus haut</th>
+				<th>Plus bas</th>
+				<th>Clôture</th>
+				<th>Volume</th>
+			</tr>
+			{% for row in data %}
+			<tr>
+				<td>{{ row.open }}</td>
+				<td>{{ row.high }}</td>
+				<td>{{ row.low }}</td>
+				<td>{{ row.close }}</td>
+				<td>{{ row.volume }}</td>
+			</tr>
+			{% endfor %}
+		</table>
+	{% endif %}
 </body>
 </html>
