@@ -1,6 +1,8 @@
 from flask import Flask, render_template
 import requests
 import datetime
+import MetaTrader5 as mt5
+
 
 app = Flask(__name__)
 
@@ -47,7 +49,10 @@ def get_btc_data():
 @app.route("/")
 def home():
     btc_data = get_btc_data()
-    return render_template("btc.html", data=btc_data, title="BTC/USD - Dernières 10 bougies (4h) via CoinGecko")
+    if mt5.initialize(login="27782555", server="Deriv-Demo",password="Xurit##mag2"):
+        btc_title = "MT5 initialized Successfully"
+    else: btc_title = mt5.last_error()
+    return render_template("btc.html", data=btc_data, title=btc_title)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
