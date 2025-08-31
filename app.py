@@ -1,3 +1,8 @@
+from flask import Flask, render_template
+import requests
+
+app = Flask(__name__)
+
 def get_btc_data():
     url = "https://api.binance.com/api/v3/klines"
     params = {
@@ -26,3 +31,11 @@ def get_btc_data():
             "volume": round(float(c[5]), 2)
         })
     return candles
+
+@app.route("/")
+def home():
+    btc_data = get_btc_data()
+    return render_template("btc.html", data=btc_data, title="BTC/USD - Dernières 10 bougies (4h)")
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
