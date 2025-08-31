@@ -1,41 +1,53 @@
 from flask import Flask, render_template
 import requests
+import datetime
 
 app = Flask(__name__)
 
 def get_btc_data():
-    url = "https://api.binance.com/api/v3/klines"
+    url = "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart"
     params = {
-        "symbol": "BTCUSDT",   # BTC/USD sur Binance (pair USDT)
-        "interval": "4h",
-        "limit": 10
+        "vs_currency": "usd",
+        "days": 2,          # Pour être sûr d’avoir 10 bougies 4h
+        "interval": "hourly"
     }
     response = requests.get(url, params=params)
+    data = response.json()
 
-    try:
-        data = response.json()
-    except Exception as e:
-        return [{"error": f"Impossible de parser la réponse: {e}"}]
-
-    # Vérifier si on a une liste (bougies) ou un dict (erreur Binance)
-    if isinstance(data, dict) and "msg" in data:
-        return [{"error": f"Erreur Binance: {data['msg']}"}]
-
+    prices = data.get("prices", [])  # [[timestamp, price], ...]
+    
+    # Regrouper par 4h pour faire bougies simples
     candles = []
-    for c in data:
+    for i in range(0, len(prices), 4):
+        slice_prices = prices[i:i+4]
+        if len(slice_prices) < 4:
+            continue
+        open_price = slice_prices[0][1]
+        close_price = slice_prices[-1][1]
+        high_price = max(p[1] for p in slice_prices)
+        low_price = min(p[1] for p in slice_prices)
+        volume = 0  # CoinGecko API "market_chart" fournit volume séparément si besoin
+
+        # timestamp pour la bougie (ouverture)
+        ts = slice_prices[0][0]
+        time_str = datetime.datetime.fromtimestamp(ts/1000).strftime("%Y-%m-%d %H:%M")
+
         candles.append({
-            "open": round(float(c[1]), 2),
-            "high": round(float(c[2]), 2),
-            "low": round(float(c[3]), 2),
-            "close": round(float(c[4]), 2),
-            "volume": round(float(c[5]), 2)
+            "time": time_str,
+            "open": round(open_price, 2),
+            "high": round(high_price, 2),
+            "low": round(low_price, 2),
+            "close": round(close_price, 2),
+            "volume": volume
         })
-    return candles
+
+    # On ne garde que les 10 dernières bougies
+    return candles[-10:]
 
 @app.route("/")
 def home():
     btc_data = get_btc_data()
-    return render_template("btc.html", data=btc_data, title="BTC/USD - Dernières 10 bougies (4h)")
+    return render_template("btc.html", data=btc_data, title="BTC/USD - Dernières 10 bougies (4h) via CoinGecko")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
